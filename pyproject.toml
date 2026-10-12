@@ -5,14 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "ipykernel>=7.4.0",
-    "pandas>=3.0.6",
+    "fastapi>=0.143.0",
     "pydantic>=2.14.0",
     "sqlalchemy>=2.1.4",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
 dev = [
+    "ipykernel>=7.4.0",
+    "pandas>=3.0.6",
     "ruff",
 ]
 
@@ -21,3 +23,8 @@ line-length = 80
 
 [tool.ruff.lint]
 unfixable = ["F401", "UP037"]
+extend-select = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

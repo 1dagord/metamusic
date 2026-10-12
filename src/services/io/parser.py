@@ -2,7 +2,7 @@ import logging
 import plistlib
 from pathlib import Path
 
-from core.logging import Loggers
+from src.core.logging import Loggers
 
 logger = logging.getLogger(Loggers.IO)
 

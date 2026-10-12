@@ -4,6 +4,7 @@ from enum import StrEnum, auto
 
 class Loggers(StrEnum):
     IO = auto()
+    DB = auto()
 
 
 logging_config = {
@@ -12,7 +13,7 @@ logging_config = {
     "formatters": {
         "simple": {"format": "%(levelname)s: %(message)s"},
         "detailed": {
-            "format": {"[%(levelname)s] %(asctime)s | %(module)s: %(message)s"},
+            "format": "[%(levelname)s] %(asctime)s | %(module)s: %(message)s",
             "datefmt": "%Y-%m-%dT%H:%M%S%z",
         },
     },
@@ -25,7 +26,16 @@ logging_config = {
     },
     "loggers": {
         "root": {"level": "INFO", "handlers": ["stdout"]},
-        Loggers.IO: {"level": "DEBUG", "handlers": ["stdout"]},
+        Loggers.IO: {
+            "level": "DEBUG",
+            "propagate": False,
+            "handlers": ["stdout"],
+        },
+        Loggers.DB: {
+            "level": "DEBUG",
+            "propagate": False,
+            "handlers": ["stdout"],
+        },
     },
 }
 

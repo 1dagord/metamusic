@@ -1,12 +1,15 @@
-from collections.abc import Set
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Integer, Interval, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from db.associations import artist_track_assn_table, genre_track_assn_table
-from db.base import Base
-from src.db.artist.model import ArtistModel as Artist
-from src.db.genre.model import GenreModel as Genre
+from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.db.associations import (
+        ArtistTrackAssociation,
+        GenreTrackAssociation,
+    )
 
 
 class TrackModel(Base):
@@ -20,14 +23,12 @@ class TrackModel(Base):
 
     total_time: Mapped[Interval] = mapped_column(Interval, nullable=False)
 
-    artists: Mapped[Set["Artist"]] = relationship(
-        secondary=artist_track_assn_table,
-        back_populates="id",
+    artists: Mapped[list["ArtistTrackAssociation"]] = relationship(
+        back_populates="track",
         cascade="all, delete-orphan",
     )
 
-    genres: Mapped[Set["Genre"]] = relationship(
-        secondary=genre_track_assn_table,
-        back_populates="id",
+    genres: Mapped[list["GenreTrackAssociation"]] = relationship(
+        back_populates="track",
         cascade="all, delete-orphan",
     )
