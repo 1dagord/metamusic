@@ -13,8 +13,10 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "httpx2>=2.13.1",
     "ipykernel>=7.4.0",
     "pandas>=3.0.6",
+    "pytest>=9.1.1",
     "ruff",
 ]
 
