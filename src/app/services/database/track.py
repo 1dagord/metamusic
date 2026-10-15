@@ -46,8 +46,6 @@ class TrackService(DatabaseOperator):
             bit_rate=entry.bit_rate,
             sample_rate=entry.sample_rate,
             file_type=entry.file_type,
-            # artists=artists,
-            # genres=genres,
         )
 
         for artist in artists:

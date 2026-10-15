@@ -38,6 +38,7 @@ class TrackModel(Base):
     artists: Mapped[list["ArtistModel"]] = relationship(
         secondary="artist_track_assn_table",
         back_populates="tracks",
+        passive_deletes=True,
         cascade="all, delete",
         # cascade="all, delete-orphan",
     )

@@ -29,7 +29,6 @@ class ArtistService(DatabaseOperator):
         logger.debug("Created Artist entry")
         return result
 
-    # TODO: write this
     def create_artist_from_track(self, track: TrackCreate) -> Sequence[Artist]:
         logger.debug("Creating Artist from Track entry...")
 
@@ -38,21 +37,22 @@ class ArtistService(DatabaseOperator):
         with self._db.begin():
             select_stmt = select(Artist).where(Artist.name.in_(track.artists))
             results = self._db.scalars(select_stmt).all()
-            present_artists = results
+            present_artists: set[str] = {a.name for a in results}
             # stores current ArtistModel objects...
-            instances.extend(present_artists)
+            instances.extend(results)
 
-        # ...and creates new ones for those not present
-        instances.extend(
-            [
-                Artist(name=artist)
-                for artist in track.artists
-                if artist not in present_artists
-            ]
-        )
+        extra_artists = [
+            Artist(name=artist)
+            for artist in track.artists
+            if artist not in present_artists
+        ]
 
-        with self._db.begin():
-            self._db.add_all(instances)
+        if extra_artists:
+            # ...and creates new ones for those not present
+            instances.extend(extra_artists)
+
+            with self._db.begin():
+                self._db.add_all(instances)
 
         return instances
 

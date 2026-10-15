@@ -82,7 +82,7 @@ def create_track(
     track_service: TrackService = Depends(get_track_service),
     artist_service: ArtistService = Depends(get_artist_service),
     genre_service: GenreService = Depends(get_genre_service),
-) -> None:
+):
     # TODO: entering same track results in a HTTP 201; figure out a way to force a collision
     # (this didn't work; don't make it hacky)
 

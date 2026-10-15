@@ -54,10 +54,10 @@ def read_all(
     status_code=http_status.HTTP_200_OK,
 )
 def read_genre(
-    entries: list[GenreBase],
+    entry: GenreBase,
     genre_service: GenreService = Depends(get_genre_service),
 ):
-    return genre_service.read_genre(entries)
+    return genre_service.read_genre(entry)
 
 
 # ==============================

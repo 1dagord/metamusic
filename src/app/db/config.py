@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Generator
 
-from sqlalchemy import Engine, create_engine, inspect
+from sqlalchemy import Engine, create_engine, event, inspect
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import close_all_sessions, sessionmaker
@@ -26,6 +26,13 @@ DATABASE_MODELS = [
     ArtistTrackAssociation,
     GenreTrackAssociation,
 ]
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON;")
+    cursor.close()
 
 
 def create_sqlite_database_engine() -> Engine:

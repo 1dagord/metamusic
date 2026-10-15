@@ -29,7 +29,6 @@ class GenreService(DatabaseOperator):
         logger.debug("Created Genre entry")
         return result
 
-    # TODO: write this
     def create_genre_from_track(self, track: TrackCreate) -> Sequence[Genre]:
         logger.debug("Creating Genre(s) from Track entry...")
 
@@ -38,21 +37,22 @@ class GenreService(DatabaseOperator):
         with self._db.begin():
             select_stmt = select(Genre).where(Genre.name.in_(track.genres))
             results = self._db.scalars(select_stmt).all()
-            present_genres = results
+            present_genres: set[str] = {g.name for g in results}
             # stores current GenreModel objects...
-            instances.extend(present_genres)
+            instances.extend(results)
 
-        # ...and creates new ones for those not present
-        instances.extend(
-            [
-                Genre(name=genre)
-                for genre in track.genres
-                if genre not in present_genres
-            ]
-        )
+        extra_genres = [
+            Genre(name=genre)
+            for genre in track.genres
+            if genre not in present_genres
+        ]
 
-        with self._db.begin():
-            self._db.add_all(instances)
+        if extra_genres:
+            # ...and creates new ones for those not present
+            instances.extend(extra_genres)
+
+            with self._db.begin():
+                self._db.add_all(instances)
 
         return instances
 
@@ -62,11 +62,9 @@ class GenreService(DatabaseOperator):
         stmt = select(Genre)
         return self._db.scalars(stmt).all()
 
-    def read_genre(self, entries: Sequence[GenreBase]):
-        stmt = select(Genre).where(
-            Genre.id.in_([entry.id for entry in entries])
-        )
-        return self._db.scalars(stmt).all()
+    def read_genre(self, entry: GenreBase):
+        stmt = select(Genre).where(Genre.id == entry.id)
+        return self._db.scalars(stmt).one()
 
     def delete_all(self):
         logger.debug("Deleting all entries from Genre table...")

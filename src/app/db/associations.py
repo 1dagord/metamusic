@@ -1,9 +1,6 @@
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
-from src.app.api.v1.artist.model import ArtistModel as Artist
-from src.app.api.v1.genre.model import GenreModel as Genre
-from src.app.api.v1.track.model import TrackModel as Track
 from src.app.db.base import Base
 
 
