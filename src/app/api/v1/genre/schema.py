@@ -4,10 +4,12 @@ schema.py
 Contains contracts for interacting with the Genre database table
 """
 
+from collections.abc import Sequence
+
 from pydantic import BaseModel, NonNegativeInt
 
 from src.app.api.v1.track.schema import TrackRead
-from src.app.core.types import ValidString
+from src.app.core.types import OptionalValidString, ValidString
 
 
 class GenreBase(BaseModel):
@@ -20,11 +22,12 @@ class GenreCreate(BaseModel):
 
 class GenreRead(GenreBase):
     name: ValidString
-    tracks: set[TrackRead]
+    tracks: Sequence[TrackRead]
 
 
 class GenreUpdate(GenreBase):
-    pass
+    name: OptionalValidString = None
+    tracks: Sequence[TrackRead] | None = None
 
 
 class GenreDelete(GenreBase):

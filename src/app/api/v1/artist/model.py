@@ -24,6 +24,4 @@ class ArtistModel(Base):
         back_populates="artists",
         passive_deletes=True,
         passive_updates=True,
-        # cascade="all, delete",
-        # cascade="all, delete-orphan",
     )

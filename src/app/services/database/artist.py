@@ -3,11 +3,17 @@ from collections.abc import Sequence
 
 from fastapi import HTTPException
 from fastapi import status as http_status
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import Session as OrmSession
 
 from src.app.api.v1.artist.model import ArtistModel as Artist
-from src.app.api.v1.artist.schema import ArtistBase, ArtistCreate, ArtistRead
+from src.app.api.v1.artist.schema import (
+    ArtistBase,
+    ArtistCreate,
+    ArtistDelete,
+    ArtistRead,
+    ArtistUpdate,
+)
 from src.app.api.v1.track.schema import TrackCreate
 from src.app.core.logging import Loggers
 from src.app.services.operators.database import DatabaseOperator
@@ -19,7 +25,7 @@ class ArtistService(DatabaseOperator):
     def __init__(self, session: OrmSession):
         self._db = session
 
-    def create_artist(self, entry: ArtistCreate):
+    def create_artist(self, entry: ArtistCreate) -> Artist:
         logger.debug("Creating Artist entry...")
 
         with self._db.begin():
@@ -56,7 +62,7 @@ class ArtistService(DatabaseOperator):
 
         return instances
 
-    def read_artist(self, entry: ArtistBase):
+    def read_artist(self, entry: ArtistBase) -> Artist:
         stmt = select(Artist).where(Artist.id == entry.id)
         return self._db.scalars(stmt).one()
 
@@ -66,7 +72,22 @@ class ArtistService(DatabaseOperator):
         stmt = select(Artist)
         return self._db.scalars(stmt).all()
 
-    def delete_all(self):
+    def update_artist(self, entry: ArtistUpdate) -> Artist:
+        logger.debug("Updating one artist entry...")
+
+        with self._db.begin():
+            artist_to_be_updated = entry.model_dump(exclude_unset=True)
+            stmt = (
+                update(Artist)
+                .where(Artist.id == entry.id)
+                .values(**artist_to_be_updated)
+                .returning(Artist)
+            )
+            result = self._db.scalars(stmt).one()
+
+        return result
+
+    def delete_all(self) -> None:
         logger.debug("Deleting all entries from Artist table...")
 
         with self._db.begin():
@@ -82,3 +103,10 @@ class ArtistService(DatabaseOperator):
                 )
 
         logger.debug(f"Deleted {num_deleted_rows} from Artist table")
+
+    def delete_artist(self, entry: ArtistDelete) -> None:
+        with self._db.begin():
+            stmt = delete(Artist).where(Artist.id == entry.id)
+            self._db.execute(stmt)
+
+        logger.debug(f"Deleted {entry.id} from Artist table")

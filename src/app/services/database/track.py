@@ -3,7 +3,7 @@ from collections.abc import Sequence
 
 from fastapi import HTTPException
 from fastapi import status as http_status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session as OrmSession
 
 from src.app.api.v1.artist.model import ArtistModel as Artist
@@ -11,10 +11,14 @@ from src.app.api.v1.artist.schema import ArtistCreate
 from src.app.api.v1.genre.model import GenreModel as Genre
 from src.app.api.v1.genre.schema import GenreCreate
 from src.app.api.v1.track.model import TrackModel as Track
-from src.app.api.v1.track.schema import TrackBase, TrackCreate
+from src.app.api.v1.track.schema import (
+    TrackBase,
+    TrackCreate,
+    TrackDelete,
+    TrackRead,
+    TrackUpdate,
+)
 from src.app.core.logging import Loggers
-
-# from src.app.db.associations import ArtistTrackAssociation, GenreTrackAssociation
 from src.app.db.associations import (
     ArtistTrackAssociation,
     GenreTrackAssociation,
@@ -67,11 +71,26 @@ class TrackService(DatabaseOperator):
         stmt = select(Track)
         return self._db.scalars(stmt).all()
 
-    def read_track(self, entries: Sequence[TrackBase]):
-        stmt = select(Track).where(
-            Track.persistent_id.in_([entry.persistent_id for entry in entries])
-        )
-        return self._db.scalars(stmt).all()
+    def read_track(self, entry: TrackBase) -> Track:
+        logger.debug("Reading one track entry...")
+
+        stmt = select(Track).where(Track.persistent_id == entry.persistent_id)
+        return self._db.scalars(stmt).one()
+
+    def update_track(self, entry: TrackUpdate):
+        logger.debug("Updating one track entry...")
+
+        with self._db.begin():
+            track_to_be_updated = entry.model_dump(exclude_unset=True)
+            stmt = (
+                update(Track)
+                .where(Track.persistent_id == entry.persistent_id)
+                .values(**track_to_be_updated)
+                .returning(Track)
+            )
+            result = self._db.scalars(stmt).one()
+
+        return result
 
     def delete_all(self) -> None:
         logger.debug("Deleting all entries from Track table...")
@@ -89,3 +108,12 @@ class TrackService(DatabaseOperator):
                 )
 
         logger.debug(f"Deleted {num_deleted_rows} from Track table")
+
+    def delete_track(self, entry: TrackDelete) -> None:
+        with self._db.begin():
+            stmt = delete(Track).where(
+                Track.persistent_id == entry.persistent_id
+            )
+            self._db.execute(stmt)
+
+        logger.debug(f"Deleted {entry.persistent_id} from Track table")

@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends
 from fastapi import status as http_status
 
-from src.app.api.v1.genre.schema import GenreBase, GenreCreate, GenreRead
+from src.app.api.v1.genre.schema import (
+    GenreBase,
+    GenreCreate,
+    GenreDelete,
+    GenreRead,
+    GenreUpdate,
+)
 from src.app.core.types import DatabaseSession
 from src.app.services.database.genre import GenreService
 
@@ -65,6 +71,19 @@ def read_genre(
 # ==============================
 
 
+@GenreRouter.patch(
+    "/update",
+    summary="Update a Genre table entry",
+    response_model=GenreRead,
+    status_code=http_status.HTTP_200_OK,
+)
+def update_genre(
+    entry: GenreUpdate,
+    genre_service: GenreService = Depends(get_genre_service),
+):
+    return genre_service.update_genre(entry)
+
+
 # ==============================
 # DELETE
 # ==============================
@@ -77,3 +96,15 @@ def read_genre(
 )
 def delete_all(genre_service: GenreService = Depends(get_genre_service)):
     return genre_service.delete_all()
+
+
+@GenreRouter.delete(
+    "/delete",
+    summary="Delete one entry to Genre table",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+)
+def delete_genre(
+    entry: GenreDelete,
+    genre_service: GenreService = Depends(get_genre_service),
+):
+    return genre_service.delete_genre(entry)

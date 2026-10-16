@@ -24,6 +24,4 @@ class GenreModel(Base):
         back_populates="genres",
         passive_deletes=True,
         passive_updates=True,
-        # cascade="all, delete",
-        # cascade="all, delete-orphan",
     )

@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from pydantic import BaseModel, NonNegativeInt
 
 from src.app.api.v1.track.schema import TrackRead
-from src.app.core.types import ValidString
+from src.app.core.types import OptionalValidString, ValidString
 
 
 class ArtistBase(BaseModel):
@@ -26,8 +26,8 @@ class ArtistRead(ArtistBase):
 
 
 class ArtistUpdate(ArtistBase):
-    name: ValidString
-    tracks: Sequence[TrackRead]
+    name: OptionalValidString = None
+    tracks: Sequence[TrackRead] | None = None
 
 
 class ArtistDelete(ArtistBase):

@@ -3,11 +3,16 @@ from collections.abc import Sequence
 
 from fastapi import HTTPException
 from fastapi import status as http_status
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import Session as OrmSession
 
 from src.app.api.v1.genre.model import GenreModel as Genre
-from src.app.api.v1.genre.schema import GenreBase, GenreCreate
+from src.app.api.v1.genre.schema import (
+    GenreBase,
+    GenreCreate,
+    GenreDelete,
+    GenreUpdate,
+)
 from src.app.api.v1.track.schema import TrackCreate
 from src.app.core.logging import Loggers
 from src.app.services.operators.database import DatabaseOperator
@@ -66,6 +71,21 @@ class GenreService(DatabaseOperator):
         stmt = select(Genre).where(Genre.id == entry.id)
         return self._db.scalars(stmt).one()
 
+    def update_genre(self, entry: GenreUpdate):
+        logger.debug("Updating one genre entry...")
+
+        with self._db.begin():
+            genre_to_be_updated = entry.model_dump(exclude_unset=True)
+            stmt = (
+                update(Genre)
+                .where(Genre.id == entry.id)
+                .values(**genre_to_be_updated)
+                .returning(Genre)
+            )
+            result = self._db.scalars(stmt).one()
+
+        return result
+
     def delete_all(self):
         logger.debug("Deleting all entries from Genre table...")
 
@@ -82,3 +102,10 @@ class GenreService(DatabaseOperator):
                 )
 
         logger.debug(f"Deleted {num_deleted_rows} from Genre table")
+
+    def delete_genre(self, entry: GenreDelete) -> None:
+        with self._db.begin():
+            stmt = delete(Genre).where(Genre.id == entry.id)
+            self._db.execute(stmt)
+
+        logger.debug(f"Deleted {entry.id} from Genre table")

@@ -8,10 +8,6 @@ from src.app.db.base import Base
 if TYPE_CHECKING:
     from src.app.api.v1.artist.model import ArtistModel
     from src.app.api.v1.genre.model import GenreModel
-    # from src.app.db.associations import (
-    #     ArtistTrackAssociation,
-    #     GenreTrackAssociation,
-    # )
 
 
 class TrackModel(Base):
@@ -40,7 +36,6 @@ class TrackModel(Base):
         back_populates="tracks",
         passive_deletes=True,
         cascade="all, delete",
-        # cascade="all, delete-orphan",
     )
 
     genres: Mapped[list["GenreModel"]] = relationship(
@@ -48,5 +43,4 @@ class TrackModel(Base):
         back_populates="tracks",
         passive_deletes=True,
         cascade="all, delete",
-        # cascade="all, delete-orphan",
     )

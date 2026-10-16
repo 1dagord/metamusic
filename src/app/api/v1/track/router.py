@@ -12,7 +12,13 @@ from src.app.api.v1.artist.schema import ArtistCreate
 from src.app.api.v1.genre.model import GenreModel as Genre
 from src.app.api.v1.genre.router import GenreService
 from src.app.api.v1.genre.schema import GenreCreate
-from src.app.api.v1.track.schema import TrackCreate, TrackRead
+from src.app.api.v1.track.schema import (
+    TrackBase,
+    TrackCreate,
+    TrackDelete,
+    TrackRead,
+    TrackUpdate,
+)
 from src.app.core.logging import Loggers
 from src.app.core.types import DatabaseSession
 from src.app.db.config import engine
@@ -26,6 +32,7 @@ logger = logging.getLogger(Loggers.DB)
 
 def _get_second_db_session() -> Generator[OrmSession]:
     logger.debug("=== Getting second database session... ===")
+
     SecondSessionLocal = sessionmaker(
         autocommit=False, autoflush=False, bind=engine
     )
@@ -38,6 +45,7 @@ def _get_second_db_session() -> Generator[OrmSession]:
 
 def _get_third_db_session() -> Generator[OrmSession]:
     logger.debug("=== Getting third database session... ===")
+
     ThirdSessionLocal = sessionmaker(
         autocommit=False, autoflush=False, bind=engine
     )
@@ -68,8 +76,6 @@ def get_genre_service(db: ThirdDatabaseSession) -> GenreService:
 # CREATE
 # ==============================
 
-# TODO: figure out semantics of one track with multiple artists
-
 
 @TrackRouter.post(
     "/create",
@@ -83,17 +89,8 @@ def create_track(
     artist_service: ArtistService = Depends(get_artist_service),
     genre_service: GenreService = Depends(get_genre_service),
 ):
-    # TODO: entering same track results in a HTTP 201; figure out a way to force a collision
-    # (this didn't work; don't make it hacky)
-
     artists = artist_service.create_artist_from_track(entry)
-
-    logger.debug(f"{[a.name for a in artists] = }")
-
     genres = genre_service.create_genre_from_track(entry)
-
-    logger.debug(f"{[g.name for g in genres] = }")
-
     return track_service.create_track(entry, artists, genres)
 
 
@@ -114,9 +111,35 @@ def read_all(
     return track_service.read_all()
 
 
+@TrackRouter.get(
+    "/read",
+    summary="Read a Track table entry",
+    response_model=TrackRead,
+    status_code=http_status.HTTP_200_OK,
+)
+def read_track(
+    entry: TrackBase,
+    track_service: TrackService = Depends(get_track_service),
+):
+    return track_service.read_track(entry)
+
+
 # ==============================
 # UPDATE
 # ==============================
+
+
+@TrackRouter.patch(
+    "/update",
+    summary="Update a Track table entry",
+    response_model=TrackRead,
+    status_code=http_status.HTTP_200_OK,
+)
+def update_track(
+    entry: TrackUpdate,
+    track_service: TrackService = Depends(get_track_service),
+):
+    return track_service.update_track(entry)
 
 
 # ==============================
@@ -126,8 +149,20 @@ def read_all(
 
 @TrackRouter.delete(
     "/delete/all",
-    summary="Delete *all* entries to Track table",
+    summary="Delete *all* entries from Track table",
     status_code=http_status.HTTP_204_NO_CONTENT,
 )
 def delete_all(track_service: TrackService = Depends(get_track_service)):
     return track_service.delete_all()
+
+
+@TrackRouter.delete(
+    "/delete",
+    summary="Delete one entry from Track table",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+)
+def delete_track(
+    entry: TrackDelete,
+    track_service: TrackService = Depends(get_track_service),
+):
+    return track_service.delete_track(entry)

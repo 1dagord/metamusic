@@ -20,7 +20,12 @@ from pydantic import (
     StringConstraints,
 )
 
-from src.app.core.types import OptionalValidString, ValidInteger, ValidString
+from src.app.core.types import (
+    OptionalValidInteger,
+    OptionalValidString,
+    ValidInteger,
+    ValidString,
+)
 
 if TYPE_CHECKING:
     from src.app.api.v1.artist.schema import ArtistRead
@@ -71,6 +76,11 @@ ValidInterval = Annotated[timedelta, AfterValidator(_validate_interval)]
 ValidYear = Annotated[ValidInteger, Field(ge=1000, le=9999)]
 ValidSampleRate = Annotated[ValidInteger, Field(ge=44100)]
 
+OptionalValidYear = ValidYear | None
+OptionalValidInterval = ValidInterval | None
+OptionalValidSampleRate = ValidSampleRate | None
+OptionalValidFileType = ValidFileType | None
+
 
 class TrackBase(BaseModel):
     persistent_id: ValidString
@@ -99,13 +109,18 @@ class TrackRead(TrackBase):
     bit_rate: ValidInteger
     sample_rate: ValidSampleRate
     file_type: ValidFileType
-    # artists: Sequence[ArtistRead]
-    # genres: Sequence[GenreRead]
 
 
 class TrackUpdate(TrackBase):
-    pass
+    name: OptionalValidString = None
+    size: OptionalValidInteger = None
+    total_time: OptionalValidInterval = None
+    year: OptionalValidYear = None
+    bpm: OptionalValidInteger = None
+    bit_rate: OptionalValidInteger = None
+    sample_rate: OptionalValidSampleRate = None
+    file_type: OptionalValidFileType = None
 
 
-class TrackDelete(TrackBase):
-    pass
+class TrackDelete(BaseModel):
+    persistent_id: ValidString = Field(alias="Persistent ID")
