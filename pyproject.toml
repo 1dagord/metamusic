@@ -21,13 +21,3 @@ dev = [
     "ruff",
 ]
 
-[tool.ruff]
-line-length = 80
-
-[tool.ruff.lint]
-unfixable = ["F401", "UP037"]
-extend-select = ["E501"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
