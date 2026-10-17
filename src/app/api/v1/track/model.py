@@ -31,14 +31,14 @@ class TrackModel(Base):
 
     file_type: Mapped[str] = mapped_column(String(6), nullable=True)
 
-    artists: Mapped[list["ArtistModel"]] = relationship(
+    artists: Mapped[list[ArtistModel]] = relationship(
         secondary="artist_track_assn_table",
         back_populates="tracks",
         passive_deletes=True,
         cascade="all, delete",
     )
 
-    genres: Mapped[list["GenreModel"]] = relationship(
+    genres: Mapped[list[GenreModel]] = relationship(
         secondary="genre_track_assn_table",
         back_populates="tracks",
         passive_deletes=True,

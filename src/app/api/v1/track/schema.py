@@ -5,11 +5,10 @@ Contains contracts for interacting with the Track database table
 """
 
 import re
-from collections.abc import Sequence, Set
 from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import Annotated, Any
 from urllib.parse import unquote, urlparse
 from urllib.request import url2pathname
 
@@ -27,10 +26,6 @@ from src.app.core.types import (
     ValidInteger,
     ValidString,
 )
-
-if TYPE_CHECKING:
-    from src.app.api.v1.artist.schema import ArtistRead
-    from src.app.api.v1.genre.schema import GenreRead
 
 
 class AcceptableFileType(StrEnum):
@@ -87,8 +82,8 @@ ValidFileType = Annotated[
 ValidInterval = Annotated[timedelta, AfterValidator(_validate_interval)]
 ValidYear = Annotated[ValidInteger, Field(ge=1000, le=9999)]
 ValidSampleRate = Annotated[ValidInteger, Field(ge=44100)]
-ValidArtists = Annotated[Set[ValidString], BeforeValidator(_validate_artists)]
-ValidGenres = Annotated[Set[ValidString], BeforeValidator(_validate_genres)]
+ValidArtists = Annotated[set[ValidString], BeforeValidator(_validate_artists)]
+ValidGenres = Annotated[set[ValidString], BeforeValidator(_validate_genres)]
 
 OptionalValidYear = ValidYear | None
 OptionalValidInterval = ValidInterval | None

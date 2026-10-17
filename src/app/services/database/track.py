@@ -7,22 +7,15 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session as OrmSession
 
 from src.app.api.v1.artist.model import ArtistModel as Artist
-from src.app.api.v1.artist.schema import ArtistCreate
 from src.app.api.v1.genre.model import GenreModel as Genre
-from src.app.api.v1.genre.schema import GenreCreate
 from src.app.api.v1.track.model import TrackModel as Track
 from src.app.api.v1.track.schema import (
     TrackBase,
     TrackCreate,
     TrackDelete,
-    TrackRead,
     TrackUpdate,
 )
 from src.app.core.logging import Loggers
-from src.app.db.associations import (
-    ArtistTrackAssociation,
-    GenreTrackAssociation,
-)
 from src.app.services.operators.database import DatabaseOperator
 
 logger = logging.getLogger(Loggers.DB)
@@ -95,7 +88,7 @@ class TrackService(DatabaseOperator):
 
         with self._db.begin():
             stmt = delete(Track)
-            num_deleted_rows = self._db.execute(stmt).rowcount
+            num_deleted_rows = self._db.execute(stmt).rowcount  # pyright: ignore [reportAttributeAccessIssue]
 
             if not num_deleted_rows:
                 error_msg = "Delete failed. Database is empty."
@@ -112,7 +105,7 @@ class TrackService(DatabaseOperator):
             stmt = delete(Track).where(
                 Track.persistent_id == entry.persistent_id
             )
-            num_deleted_rows = self._db.execute(stmt).rowcount
+            num_deleted_rows = self._db.execute(stmt).rowcount  # pyright: ignore [reportAttributeAccessIssue]
 
             if not num_deleted_rows:
                 error_msg = "Delete failed. Database is empty."

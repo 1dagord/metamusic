@@ -11,7 +11,6 @@ from src.app.api.v1.artist.schema import (
     ArtistBase,
     ArtistCreate,
     ArtistDelete,
-    ArtistRead,
     ArtistUpdate,
 )
 from src.app.api.v1.track.schema import TrackCreate

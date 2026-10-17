@@ -49,7 +49,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return JSONResponse({"message": "Hello World!"})
+    return JSONResponse({"message": f"Hello from {config.app_name}"})
 
 
 if __name__ == "__main__":

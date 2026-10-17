@@ -7,7 +7,6 @@ from src.app.db.base import Base
 
 if TYPE_CHECKING:
     from src.app.api.v1.track.model import TrackModel
-    # from src.app.db.associations import ArtistTrackAssociation
 
 
 class ArtistModel(Base):
@@ -19,7 +18,7 @@ class ArtistModel(Base):
 
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
-    tracks: Mapped[list["TrackModel"]] = relationship(
+    tracks: Mapped[list[TrackModel]] = relationship(
         secondary="artist_track_assn_table",
         back_populates="artists",
         passive_deletes=True,

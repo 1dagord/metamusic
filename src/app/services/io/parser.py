@@ -9,11 +9,11 @@ from src.app.services.operators.file import FileOperator
 logger = logging.getLogger(Loggers.IO)
 
 
-class IOService(FileOperator):
+class FileIOService(FileOperator):
     def __init__(self):
         pass
 
-    def parse(self, file: Path | str | bytes) -> dict[Any, Any]:
+    def parse(self, file: Path | str | bytes) -> dict[str, Any]:
         if isinstance(file, Path):
             with open(file=file, mode="rb") as fp:
                 data = plistlib.load(fp)

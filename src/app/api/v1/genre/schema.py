@@ -1,9 +1,3 @@
-"""
-schema.py
-
-Contains contracts for interacting with the Genre database table
-"""
-
 from collections.abc import Sequence
 
 from pydantic import BaseModel, NonNegativeInt

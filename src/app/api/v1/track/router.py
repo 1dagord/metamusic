@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Generator
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, UploadFile
 from fastapi import status as http_status
@@ -8,11 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import sessionmaker
 
-from src.app.api.v1.artist.model import ArtistModel as Artist
-from src.app.api.v1.artist.schema import ArtistCreate
-from src.app.api.v1.genre.model import GenreModel as Genre
 from src.app.api.v1.genre.router import GenreService
-from src.app.api.v1.genre.schema import GenreCreate
 from src.app.api.v1.track.schema import (
     TrackBase,
     TrackCreate,
@@ -20,14 +16,12 @@ from src.app.api.v1.track.schema import (
     TrackRead,
     TrackUpdate,
 )
-from src.app.core.config import config
 from src.app.core.logging import Loggers
 from src.app.core.types import DatabaseSession
 from src.app.db.config import engine
 from src.app.services.database.artist import ArtistService
 from src.app.services.database.track import TrackService
-from src.app.services.io.parser import IOService
-from src.app.services.operators.file import FileOperator
+from src.app.services.io.parser import FileIOService
 
 TrackRouter = APIRouter(tags=["Track"], prefix="/track")
 
@@ -76,8 +70,8 @@ def get_genre_service(db: ThirdDatabaseSession) -> GenreService:
     return GenreService(session=db)
 
 
-def get_io_service() -> IOService:
-    return IOService()
+def get_file_io_service() -> FileIOService:
+    return FileIOService()
 
 
 # ==============================
@@ -87,7 +81,7 @@ def get_io_service() -> IOService:
 
 @TrackRouter.post(
     "/create",
-    summary="Create a Track table entry containing one or more Genre and Artist",
+    summary="Create a Track table entry containing Genres and Artists",
     response_model=TrackRead,
     status_code=http_status.HTTP_201_CREATED,
 )
@@ -110,13 +104,13 @@ def create_track(
 )
 def create_tracks_from_file(
     file: UploadFile,
-    io_service: Annotated[IOService, Depends(get_io_service)],
+    file_io_service: Annotated[FileIOService, Depends(get_file_io_service)],
     track_service: Annotated[TrackService, Depends(get_track_service)],
     artist_service: Annotated[ArtistService, Depends(get_artist_service)],
     genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
     content = file.file.read()
-    track_data = io_service.parse(content).get("Tracks").values()
+    track_data = file_io_service.parse(content).get("Tracks").values()
 
     created_tracks = []
 
@@ -129,8 +123,6 @@ def create_tracks_from_file(
 
         artists = artist_service.create_artist_from_track(entry)
         genres = genre_service.create_genre_from_track(entry)
-
-        logger.debug("Creating Track from file data...")
 
         created_tracks.append(
             track_service.create_track(entry, artists, genres)
