@@ -11,6 +11,7 @@ from fastapi.exceptions import ResponseValidationError
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from src.app.core.logging import Loggers
+from src.app.core.utils import is_dunder_method
 
 logger = logging.getLogger(Loggers.DB)
 
@@ -18,18 +19,15 @@ logger = logging.getLogger(Loggers.DB)
 class _DatabaseOperatorMetaclass(ABC, ABCMeta):
     def __new__(mcs, name, bases, namespace):
         # wrap all functions with the wrapper defined below
-        is_dunder_method = lambda fn: fn.startswith("__") and fn.endswith("__")
-
         for value in namespace.values():
-            if inspect.isfunction(value) and not is_dunder_method(
-                fn := value.__name__
-            ):
+            if inspect.isfunction(value) and not is_dunder_method(value):
+                fn = value.__name__
                 namespace[fn] = mcs._handle_database_exceptions(namespace[fn])
 
         return super().__new__(mcs, name, bases, namespace)
 
     @staticmethod
-    def _handle_database_exceptions(func: Callable[[], Any]):
+    def _handle_database_exceptions(func: Callable[..., Any]):
         @wraps(func)
         def wrapper(*args, **kwargs):
             try:

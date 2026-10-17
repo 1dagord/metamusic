@@ -38,7 +38,7 @@ class TrackService(DatabaseOperator):
         artists: Sequence[Artist],
         genres: Sequence[Genre],
     ):
-        logger.debug("Creating Track entries...")
+        logger.debug("Creating Track entry...")
 
         track = Track(
             persistent_id=entry.persistent_id,
@@ -52,18 +52,16 @@ class TrackService(DatabaseOperator):
             file_type=entry.file_type,
         )
 
-        for artist in artists:
-            track.artists.append(artist)
-            artist.tracks.append(track)
-
-        for genre in genres:
-            track.genres.append(genre)
-            genre.tracks.append(track)
-
         with self._db.begin():
-            result = self._db.merge(track)
+            for artist in artists:
+                self._db.add(artist)
+                artist.tracks.append(track)
 
-        return result
+            for genre in genres:
+                self._db.add(genre)
+                genre.tracks.append(track)
+
+        return track
 
     def read_all(self) -> Sequence[Track]:
         logger.debug("Reading all track entries...")
@@ -97,7 +95,7 @@ class TrackService(DatabaseOperator):
 
         with self._db.begin():
             stmt = delete(Track)
-            num_deleted_rows = self._db.execute(stmt).rowcount  # pyright: ignore [reportAttributeAccessIssue]
+            num_deleted_rows = self._db.execute(stmt).rowcount
 
             if not num_deleted_rows:
                 error_msg = "Delete failed. Database is empty."
@@ -107,13 +105,21 @@ class TrackService(DatabaseOperator):
                     status_code=http_status.HTTP_404_NOT_FOUND,
                 )
 
-        logger.debug(f"Deleted {num_deleted_rows} from Track table")
+        logger.debug(f"Deleted {num_deleted_rows} row(s) from Track table")
 
     def delete_track(self, entry: TrackDelete) -> None:
         with self._db.begin():
             stmt = delete(Track).where(
                 Track.persistent_id == entry.persistent_id
             )
-            self._db.execute(stmt)
+            num_deleted_rows = self._db.execute(stmt).rowcount
 
-        logger.debug(f"Deleted {entry.persistent_id} from Track table")
+            if not num_deleted_rows:
+                error_msg = "Delete failed. Database is empty."
+                logger.exception(error_msg)
+                raise HTTPException(
+                    detail=error_msg,
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                )
+
+        logger.debug(f"Deleted entry {entry.persistent_id} from Track table")

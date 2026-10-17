@@ -15,7 +15,7 @@ class ArtistTrackAssociation(Base):
         ),
         primary_key=True,
     )
-    track_id: Mapped[int] = mapped_column(
+    track_id: Mapped[str] = mapped_column(
         ForeignKey(
             column="track.persistent_id",
             onupdate="CASCADE",
@@ -36,7 +36,7 @@ class GenreTrackAssociation(Base):
         ),
         primary_key=True,
     )
-    track_id: Mapped[int] = mapped_column(
+    track_id: Mapped[str] = mapped_column(
         ForeignKey(
             column="track.persistent_id",
             onupdate="CASCADE",

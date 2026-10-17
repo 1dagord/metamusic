@@ -1,27 +1,27 @@
 import logging
 import plistlib
 from pathlib import Path
+from typing import Any
 
 from src.app.core.logging import Loggers
+from src.app.services.operators.file import FileOperator
 
 logger = logging.getLogger(Loggers.IO)
 
 
-class PlaylistParser:
-    def __init__(self, file: Path):
-        self._data = self.read(file)
+class IOService(FileOperator):
+    def __init__(self):
+        pass
 
-    def read(self, file: Path):
-        try:
+    def parse(self, file: Path | str | bytes) -> dict[Any, Any]:
+        if isinstance(file, Path):
             with open(file=file, mode="rb") as fp:
                 data = plistlib.load(fp)
 
-            return data
+        elif isinstance(file, str):
+            data = plistlib.loads(file, fmt=plistlib.PlistFormat.FMT_XML)
 
-        except FileNotFoundError:
-            logger.exception(f"File {file} not found")
-            raise
+        else:
+            data = plistlib.loads(file)
 
-    @property
-    def tracks(self):
-        return self._data.get("Tracks")
+        return data

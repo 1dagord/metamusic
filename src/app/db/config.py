@@ -80,10 +80,11 @@ def initialize_database(engine: Engine) -> None:
 
 
 def get_db_session() -> Generator[OrmSession]:
-    print("--- Getting database... ---")
     db = SessionLocal()
+
     try:
         yield db
+
     finally:
         db.close()
 

@@ -4,7 +4,8 @@ schema.py
 Contains contracts for interacting with the Track database table
 """
 
-from collections.abc import Sequence
+import re
+from collections.abc import Sequence, Set
 from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
@@ -34,6 +35,7 @@ if TYPE_CHECKING:
 
 class AcceptableFileType(StrEnum):
     M4A = ".m4a"
+    M4P = ".m4p"
     FLAC = ".flac"
     OGG = ".ogg"
     WAV = ".wav"
@@ -66,6 +68,16 @@ def _validate_interval(interval: Any) -> timedelta:
         raise TypeError("Unexpected interval type")
 
 
+def _validate_artists(string: str) -> set[str]:
+    artists = set(re.split(r"[,&]", string))
+    return artists
+
+
+def _validate_genres(string: str) -> set[str]:
+    genres = set(re.split(r"[,&]", string))
+    return genres
+
+
 ValidFile = Annotated[str, BeforeValidator(_validate_file)]
 ValidFileType = Annotated[
     str,
@@ -75,10 +87,13 @@ ValidFileType = Annotated[
 ValidInterval = Annotated[timedelta, AfterValidator(_validate_interval)]
 ValidYear = Annotated[ValidInteger, Field(ge=1000, le=9999)]
 ValidSampleRate = Annotated[ValidInteger, Field(ge=44100)]
+ValidArtists = Annotated[Set[ValidString], BeforeValidator(_validate_artists)]
+ValidGenres = Annotated[Set[ValidString], BeforeValidator(_validate_genres)]
 
 OptionalValidYear = ValidYear | None
 OptionalValidInterval = ValidInterval | None
 OptionalValidSampleRate = ValidSampleRate | None
+OptionalValidFile = ValidFile | None
 OptionalValidFileType = ValidFileType | None
 
 
@@ -92,12 +107,12 @@ class TrackCreate(BaseModel):
     size: ValidInteger = Field(alias="Size")
     total_time: ValidInterval = Field(alias=("Total Time"))
     year: ValidYear = Field(alias=("Year"))
-    bpm: ValidInteger = Field(alias=("BPM"))
-    bit_rate: ValidInteger = Field(alias=("Bit Rate"))
+    bpm: OptionalValidInteger = Field(alias=("BPM"), default=None)
+    bit_rate: OptionalValidInteger = Field(alias=("Bit Rate"), default=None)
     sample_rate: ValidSampleRate = Field(alias=("Sample Rate"))
-    file_type: ValidFile = Field(alias=("Location"))
-    artists: Sequence[ValidString] = Field(alias="Artist")
-    genres: Sequence[ValidString] = Field(default_factory=list)
+    file_type: OptionalValidFile = Field(alias=("Location"), default=None)
+    artists: ValidArtists = Field(alias="Artist")
+    genres: ValidGenres = Field(default_factory=set)
 
 
 class TrackRead(TrackBase):
@@ -105,10 +120,10 @@ class TrackRead(TrackBase):
     size: ValidInteger
     total_time: ValidInterval
     year: ValidYear
-    bpm: ValidInteger
+    bpm: OptionalValidInteger = None
     bit_rate: ValidInteger
     sample_rate: ValidSampleRate
-    file_type: ValidFileType
+    file_type: OptionalValidFileType = None
 
 
 class TrackUpdate(TrackBase):

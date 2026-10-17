@@ -1,9 +1,10 @@
 import logging
 from collections.abc import Generator
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile
 from fastapi import status as http_status
+from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import sessionmaker
 
@@ -19,11 +20,14 @@ from src.app.api.v1.track.schema import (
     TrackRead,
     TrackUpdate,
 )
+from src.app.core.config import config
 from src.app.core.logging import Loggers
 from src.app.core.types import DatabaseSession
 from src.app.db.config import engine
 from src.app.services.database.artist import ArtistService
 from src.app.services.database.track import TrackService
+from src.app.services.io.parser import IOService
+from src.app.services.operators.file import FileOperator
 
 TrackRouter = APIRouter(tags=["Track"], prefix="/track")
 
@@ -72,6 +76,10 @@ def get_genre_service(db: ThirdDatabaseSession) -> GenreService:
     return GenreService(session=db)
 
 
+def get_io_service() -> IOService:
+    return IOService()
+
+
 # ==============================
 # CREATE
 # ==============================
@@ -85,13 +93,52 @@ def get_genre_service(db: ThirdDatabaseSession) -> GenreService:
 )
 def create_track(
     entry: TrackCreate,
-    track_service: TrackService = Depends(get_track_service),
-    artist_service: ArtistService = Depends(get_artist_service),
-    genre_service: GenreService = Depends(get_genre_service),
+    track_service: Annotated[TrackService, Depends(get_track_service)],
+    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
+    genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
     artists = artist_service.create_artist_from_track(entry)
     genres = genre_service.create_genre_from_track(entry)
     return track_service.create_track(entry, artists, genres)
+
+
+@TrackRouter.post(
+    "/create/upload",
+    summary="Create a Track table entry from an uploaded file",
+    response_model=list[TrackRead],
+    status_code=http_status.HTTP_201_CREATED,
+)
+def create_tracks_from_file(
+    file: UploadFile,
+    io_service: Annotated[IOService, Depends(get_io_service)],
+    track_service: Annotated[TrackService, Depends(get_track_service)],
+    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
+    genre_service: Annotated[GenreService, Depends(get_genre_service)],
+):
+    content = file.file.read()
+    track_data = io_service.parse(content).get("Tracks").values()
+
+    created_tracks = []
+
+    for obj in track_data:
+        # skip track if validation fails (not enough metadata)
+        try:
+            entry = TrackCreate.model_validate(obj)
+        except ValidationError:
+            continue
+
+        artists = artist_service.create_artist_from_track(entry)
+        genres = genre_service.create_genre_from_track(entry)
+
+        logger.debug("Creating Track from file data...")
+
+        created_tracks.append(
+            track_service.create_track(entry, artists, genres)
+        )
+
+    logger.debug(f"Created {len(created_tracks)} of {len(track_data)} tracks")
+
+    return created_tracks
 
 
 # ==============================
@@ -106,7 +153,7 @@ def create_track(
     status_code=http_status.HTTP_200_OK,
 )
 def read_all(
-    track_service: TrackService = Depends(get_track_service),
+    track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
     return track_service.read_all()
 
@@ -119,7 +166,7 @@ def read_all(
 )
 def read_track(
     entry: TrackBase,
-    track_service: TrackService = Depends(get_track_service),
+    track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
     return track_service.read_track(entry)
 
@@ -137,7 +184,7 @@ def read_track(
 )
 def update_track(
     entry: TrackUpdate,
-    track_service: TrackService = Depends(get_track_service),
+    track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
     return track_service.update_track(entry)
 
@@ -152,7 +199,9 @@ def update_track(
     summary="Delete *all* entries from Track table",
     status_code=http_status.HTTP_204_NO_CONTENT,
 )
-def delete_all(track_service: TrackService = Depends(get_track_service)):
+def delete_all(
+    track_service: Annotated[TrackService, Depends(get_track_service)],
+):
     return track_service.delete_all()
 
 
@@ -163,6 +212,6 @@ def delete_all(track_service: TrackService = Depends(get_track_service)):
 )
 def delete_track(
     entry: TrackDelete,
-    track_service: TrackService = Depends(get_track_service),
+    track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
     return track_service.delete_track(entry)

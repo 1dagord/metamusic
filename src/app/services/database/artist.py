@@ -36,7 +36,7 @@ class ArtistService(DatabaseOperator):
         return result
 
     def create_artist_from_track(self, track: TrackCreate) -> Sequence[Artist]:
-        logger.debug("Creating Artist from Track entry...")
+        logger.debug("Creating Artist(s) from Track entry...")
 
         instances = []
 
@@ -59,6 +59,10 @@ class ArtistService(DatabaseOperator):
 
             with self._db.begin():
                 self._db.add_all(instances)
+
+        # remove from current session to add to a new one later
+        for instance in instances:
+            self._db.expunge(instance)
 
         return instances
 
@@ -102,11 +106,19 @@ class ArtistService(DatabaseOperator):
                     status_code=http_status.HTTP_404_NOT_FOUND,
                 )
 
-        logger.debug(f"Deleted {num_deleted_rows} from Artist table")
+        logger.debug(f"Deleted {num_deleted_rows} row(s) from Artist table")
 
     def delete_artist(self, entry: ArtistDelete) -> None:
         with self._db.begin():
             stmt = delete(Artist).where(Artist.id == entry.id)
-            self._db.execute(stmt)
+            num_deleted_rows = self._db.execute(stmt).rowcount  # pyright: ignore [reportAttributeAccessIssue]
 
-        logger.debug(f"Deleted {entry.id} from Artist table")
+            if not num_deleted_rows:
+                error_msg = "Delete failed. Database is empty."
+                logger.exception(error_msg)
+                raise HTTPException(
+                    detail=error_msg,
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                )
+
+        logger.debug(f"Deleted entry {entry.id} from Artist table")

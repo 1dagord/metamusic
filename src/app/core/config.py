@@ -4,7 +4,7 @@ from pathlib import Path
 class Config:
     app_name: str = "MetaMusic"
     db_name: str = "MM"
-    debug: bool = True
+    debug: bool = False
     host: str = "0.0.0.0"
     port: int = 8000
 

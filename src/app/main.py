@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from logging import DEBUG, INFO
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +10,6 @@ from src.app.api.v1.genre.router import GenreRouter
 from src.app.api.v1.track.router import TrackRouter
 from src.app.core.config import config
 from src.app.db.config import engine, initialize_database, teardown_database
-from src.app.services.io.parser import PlaylistParser
 
 
 @asynccontextmanager
@@ -36,6 +36,7 @@ app.include_router(ArtistRouter)
 origins = [
     "http://localhost",
     f"http://localhost:{config.port}",
+    f"http://{config.host}:{config.port}",
 ]
 
 app.add_middleware(
@@ -51,10 +52,6 @@ async def root():
     return JSONResponse({"message": "Hello World!"})
 
 
-p = PlaylistParser(config.data_dir / "Library.xml")
-
-print(list(p.tracks.values())[0])
-
 if __name__ == "__main__":
     import uvicorn
 
@@ -62,5 +59,6 @@ if __name__ == "__main__":
         app,
         host=config.host,
         port=config.port,
-        log_level=("debug" if config.debug else "info"),
+        log_level=(DEBUG if config.debug else INFO),
+        log_config=None,
     )

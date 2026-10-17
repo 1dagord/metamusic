@@ -59,6 +59,10 @@ class GenreService(DatabaseOperator):
             with self._db.begin():
                 self._db.add_all(instances)
 
+        # remove from current session to add to a new one later
+        for instance in instances:
+            self._db.expunge(instance)
+
         return instances
 
     def read_all(self) -> Sequence[Genre]:
@@ -101,11 +105,19 @@ class GenreService(DatabaseOperator):
                     status_code=http_status.HTTP_404_NOT_FOUND,
                 )
 
-        logger.debug(f"Deleted {num_deleted_rows} from Genre table")
+        logger.debug(f"Deleted {num_deleted_rows} row(s) from Genre table")
 
     def delete_genre(self, entry: GenreDelete) -> None:
         with self._db.begin():
             stmt = delete(Genre).where(Genre.id == entry.id)
-            self._db.execute(stmt)
+            num_deleted_rows = self._db.execute(stmt).rowcount  # pyright: ignore [reportAttributeAccessIssue]
 
-        logger.debug(f"Deleted {entry.id} from Genre table")
+            if not num_deleted_rows:
+                error_msg = "Delete failed. Database is empty."
+                logger.exception(error_msg)
+                raise HTTPException(
+                    detail=error_msg,
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                )
+
+        logger.debug(f"Deleted entry {entry.id} from Genre table")

@@ -1,4 +1,5 @@
 from re import M
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi import status as http_status
@@ -33,7 +34,7 @@ def get_artist_service(db: DatabaseSession) -> ArtistService:
 )
 def create_artist(
     entry: ArtistCreate,
-    artist_service: ArtistService = Depends(get_artist_service),
+    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
 ):
     return artist_service.create_artist(entry)
 
@@ -51,7 +52,7 @@ def create_artist(
 )
 def read_artist(
     entry: ArtistBase,
-    artist_service: ArtistService = Depends(get_artist_service),
+    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
 ):
     return artist_service.read_artist(entry)
 
@@ -63,7 +64,7 @@ def read_artist(
     status_code=http_status.HTTP_200_OK,
 )
 def read_all(
-    artist_service: ArtistService = Depends(get_artist_service),
+    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
 ):
     return artist_service.read_all()
 
@@ -81,7 +82,7 @@ def read_all(
 )
 def update_artist(
     entry: ArtistUpdate,
-    artist_service: ArtistService = Depends(get_artist_service),
+    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
 ):
     return artist_service.update_artist(entry)
 
@@ -96,7 +97,9 @@ def update_artist(
     summary="Delete *all* entries to Artist table",
     status_code=http_status.HTTP_204_NO_CONTENT,
 )
-def delete_all(artist_service: ArtistService = Depends(get_artist_service)):
+def delete_all(
+    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
+):
     return artist_service.delete_all()
 
 
@@ -107,6 +110,6 @@ def delete_all(artist_service: ArtistService = Depends(get_artist_service)):
 )
 def delete_artist(
     entry: ArtistDelete,
-    artist_service: ArtistService = Depends(get_artist_service),
+    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
 ):
     return artist_service.delete_artist(entry)

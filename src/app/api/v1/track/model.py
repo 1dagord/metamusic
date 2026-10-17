@@ -23,13 +23,13 @@ class TrackModel(Base):
 
     year: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    bpm: Mapped[int] = mapped_column(Integer, nullable=False)
+    bpm: Mapped[int] = mapped_column(Integer, nullable=True)
 
     bit_rate: Mapped[int] = mapped_column(Integer, nullable=False)
 
     sample_rate: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    file_type: Mapped[str] = mapped_column(String(6), nullable=False)
+    file_type: Mapped[str] = mapped_column(String(6), nullable=True)
 
     artists: Mapped[list["ArtistModel"]] = relationship(
         secondary="artist_track_assn_table",

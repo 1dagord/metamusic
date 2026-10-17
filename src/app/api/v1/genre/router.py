@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from fastapi import status as http_status
 
@@ -31,7 +33,7 @@ def get_genre_service(db: DatabaseSession) -> GenreService:
 )
 def create_genre(
     entry: GenreCreate,
-    genre_service: GenreService = Depends(get_genre_service),
+    genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
     return genre_service.create_genre(entry)
 
@@ -48,7 +50,7 @@ def create_genre(
     status_code=http_status.HTTP_200_OK,
 )
 def read_all(
-    genre_service: GenreService = Depends(get_genre_service),
+    genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
     return genre_service.read_all()
 
@@ -61,7 +63,7 @@ def read_all(
 )
 def read_genre(
     entry: GenreBase,
-    genre_service: GenreService = Depends(get_genre_service),
+    genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
     return genre_service.read_genre(entry)
 
@@ -79,7 +81,7 @@ def read_genre(
 )
 def update_genre(
     entry: GenreUpdate,
-    genre_service: GenreService = Depends(get_genre_service),
+    genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
     return genre_service.update_genre(entry)
 
@@ -94,7 +96,9 @@ def update_genre(
     summary="Delete *all* entries to Genre table",
     status_code=http_status.HTTP_204_NO_CONTENT,
 )
-def delete_all(genre_service: GenreService = Depends(get_genre_service)):
+def delete_all(
+    genre_service: Annotated[GenreService, Depends(get_genre_service)],
+):
     return genre_service.delete_all()
 
 
@@ -105,6 +109,6 @@ def delete_all(genre_service: GenreService = Depends(get_genre_service)):
 )
 def delete_genre(
     entry: GenreDelete,
-    genre_service: GenreService = Depends(get_genre_service),
+    genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
     return genre_service.delete_genre(entry)
