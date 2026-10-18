@@ -1,11 +1,11 @@
 class NoMetadataAvailableError(Exception):
-    """
-    Throw when an operation is attempted on metadata that has
-    not yet been read or stored
-    """
+  """
+  Throw when an operation is attempted on metadata that has
+  not yet been read or stored
+  """
 
 
 class DatabaseEmptyError(Exception):
-    """
-    Throw when a delete is attempted on an empty database
-    """
+  """
+  Throw when a delete is attempted on an empty database
+  """

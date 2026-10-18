@@ -7,22 +7,22 @@ from src.app.core.types import OptionalValidString, ValidString
 
 
 class ArtistBase(BaseModel):
-    id: NonNegativeInt
+  id: NonNegativeInt
 
 
 class ArtistCreate(BaseModel):
-    name: ValidString
+  name: ValidString
 
 
 class ArtistRead(ArtistBase):
-    name: ValidString
-    tracks: Sequence[TrackRead]
+  name: ValidString
+  tracks: Sequence[TrackRead]
 
 
 class ArtistUpdate(ArtistBase):
-    name: OptionalValidString = None
-    tracks: Sequence[TrackRead] | None = None
+  name: OptionalValidString = None
+  tracks: Sequence[TrackRead] | None = None
 
 
 class ArtistDelete(ArtistBase):
-    pass
+  pass

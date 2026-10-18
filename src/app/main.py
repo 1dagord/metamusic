@@ -14,19 +14,19 @@ from src.app.db.config import engine, initialize_database, teardown_database
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    initialize_database(engine)
+  initialize_database(engine)
 
-    try:
-        yield
+  try:
+    yield
 
-    finally:
-        teardown_database(engine)
+  finally:
+    teardown_database(engine)
 
 
 app = FastAPI(
-    title=config.app_name,
-    debug=config.debug,
-    lifespan=lifespan,
+  title=config.app_name,
+  debug=config.debug,
+  lifespan=lifespan,
 )
 
 app.include_router(TrackRouter)
@@ -34,31 +34,31 @@ app.include_router(GenreRouter)
 app.include_router(ArtistRouter)
 
 origins = [
-    "http://localhost",
-    f"http://localhost:{config.port}",
-    f"http://{config.host}:{config.port}",
+  "http://localhost",
+  f"http://localhost:{config.port}",
+  f"http://{config.host}:{config.port}",
 ]
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
+  CORSMiddleware,
+  allow_origins=origins,
+  allow_methods=["*"],
+  allow_headers=["*"],
 )
 
 
 @app.get("/")
 async def root():
-    return JSONResponse({"message": f"Hello from {config.app_name}"})
+  return JSONResponse({"message": f"Hello from {config.app_name}"})
 
 
 if __name__ == "__main__":
-    import uvicorn
+  import uvicorn
 
-    uvicorn.run(
-        app,
-        host=config.host,
-        port=config.port,
-        log_level=(DEBUG if config.debug else INFO),
-        log_config=None,
-    )
+  uvicorn.run(
+    app,
+    host=config.host,
+    port=config.port,
+    log_level=(DEBUG if config.debug else INFO),
+    log_config=None,
+  )

@@ -12,86 +12,80 @@ from src.app.api.v1.track.model import TrackModel
 from src.app.core.config import config
 from src.app.core.logging import Loggers
 from src.app.db.associations import (
-    ArtistTrackAssociation,
-    GenreTrackAssociation,
+  ArtistTrackAssociation,
+  GenreTrackAssociation,
 )
 from src.app.db.base import Base
 
 logger = logging.getLogger(Loggers.DB)
 
 DATABASE_MODELS = [
-    TrackModel,
-    GenreModel,
-    ArtistModel,
-    ArtistTrackAssociation,
-    GenreTrackAssociation,
+  TrackModel,
+  GenreModel,
+  ArtistModel,
+  ArtistTrackAssociation,
+  GenreTrackAssociation,
 ]
 
 
 @event.listens_for(Engine, "connect")
 def _set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON;")
-    cursor.close()
+  cursor = dbapi_connection.cursor()
+  cursor.execute("PRAGMA foreign_keys=ON;")
+  cursor.close()
 
 
 def create_sqlite_database_engine() -> Engine:
-    try:
-        engine = create_engine(config.sqlite_db_url)
+  try:
+    engine = create_engine(config.sqlite_db_url)
 
-    except SQLAlchemyError:
-        error_msg = "Failed to configure the database"
-        logger.exception(error_msg)
-        raise
+  except SQLAlchemyError:
+    error_msg = "Failed to configure the database"
+    logger.exception(error_msg)
+    raise
 
-    logger.debug(
-        "SQLite database engine created. Waiting for session creation..."
-    )
+  logger.debug("SQLite database engine created. Waiting for session creation...")
 
-    return engine
+  return engine
 
 
 def initialize_database(engine: Engine) -> None:
-    try:
-        Base.metadata.create_all(engine)
+  try:
+    Base.metadata.create_all(engine)
 
-        created_tables: set[str] = set(inspect(engine).get_table_names())
-        expected_tables: set[str] = {
-            model.__tablename__ for model in DATABASE_MODELS
-        }
-        missing_tables: set[str] = created_tables - expected_tables
+    created_tables: set[str] = set(inspect(engine).get_table_names())
+    expected_tables: set[str] = {model.__tablename__ for model in DATABASE_MODELS}
+    missing_tables: set[str] = created_tables - expected_tables
 
-        logger.debug(
-            f"Created/found the following database tables: {created_tables}"
-        )
+    logger.debug(f"Created/found the following database tables: {created_tables}")
 
-        if missing_tables:
-            raise RuntimeError(
-                f"Database initialization did not create the following tables: {missing_tables}"
-            )
+    if missing_tables:
+      raise RuntimeError(
+        f"Database initialization did not create the following tables: {missing_tables}"
+      )
 
-        logger.debug("Database initialization successful! Ready for use")
+    logger.debug("Database initialization successful! Ready for use")
 
-    except Exception as e:
-        logger.exception(
-            f"Database initialization failed with exception type {type(e).__name__}"
-        )
-        raise
+  except Exception as e:
+    logger.exception(
+      f"Database initialization failed with exception type {type(e).__name__}"
+    )
+    raise
 
 
 def get_db_session() -> Generator[OrmSession]:
-    db = SessionLocal()
+  db = SessionLocal()
 
-    try:
-        yield db
+  try:
+    yield db
 
-    finally:
-        db.close()
+  finally:
+    db.close()
 
 
 def teardown_database(engine: Engine) -> None:
-    close_all_sessions()
-    engine.dispose()
+  close_all_sessions()
+  engine.dispose()
 
 
 engine = create_sqlite_database_engine()

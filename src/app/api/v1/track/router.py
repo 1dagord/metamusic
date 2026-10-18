@@ -10,11 +10,11 @@ from sqlalchemy.orm import sessionmaker
 
 from src.app.api.v1.genre.router import GenreService
 from src.app.api.v1.track.schema import (
-    TrackBase,
-    TrackCreate,
-    TrackDelete,
-    TrackRead,
-    TrackUpdate,
+  TrackBase,
+  TrackCreate,
+  TrackDelete,
+  TrackRead,
+  TrackUpdate,
 )
 from src.app.core.logging import Loggers
 from src.app.core.types import DatabaseSession
@@ -29,29 +29,25 @@ logger = logging.getLogger(Loggers.DB)
 
 
 def _get_second_db_session() -> Generator[OrmSession]:
-    logger.debug("=== Getting second database session... ===")
+  logger.debug("=== Getting second database session... ===")
 
-    SecondSessionLocal = sessionmaker(
-        autocommit=False, autoflush=False, bind=engine
-    )
-    second_db = SecondSessionLocal()
-    try:
-        yield second_db
-    finally:
-        second_db.close()
+  SecondSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+  second_db = SecondSessionLocal()
+  try:
+    yield second_db
+  finally:
+    second_db.close()
 
 
 def _get_third_db_session() -> Generator[OrmSession]:
-    logger.debug("=== Getting third database session... ===")
+  logger.debug("=== Getting third database session... ===")
 
-    ThirdSessionLocal = sessionmaker(
-        autocommit=False, autoflush=False, bind=engine
-    )
-    third_db = ThirdSessionLocal()
-    try:
-        yield third_db
-    finally:
-        third_db.close()
+  ThirdSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+  third_db = ThirdSessionLocal()
+  try:
+    yield third_db
+  finally:
+    third_db.close()
 
 
 SecondDatabaseSession = Annotated[OrmSession, Depends(_get_second_db_session)]
@@ -59,19 +55,19 @@ ThirdDatabaseSession = Annotated[OrmSession, Depends(_get_third_db_session)]
 
 
 def get_track_service(db: DatabaseSession) -> TrackService:
-    return TrackService(session=db)
+  return TrackService(session=db)
 
 
 def get_artist_service(db: SecondDatabaseSession) -> ArtistService:
-    return ArtistService(session=db)
+  return ArtistService(session=db)
 
 
 def get_genre_service(db: ThirdDatabaseSession) -> GenreService:
-    return GenreService(session=db)
+  return GenreService(session=db)
 
 
 def get_file_io_service() -> FileIOService:
-    return FileIOService()
+  return FileIOService()
 
 
 # ==============================
@@ -80,57 +76,55 @@ def get_file_io_service() -> FileIOService:
 
 
 @TrackRouter.post(
-    "/create",
-    summary="Create a Track table entry containing Genres and Artists",
-    response_model=TrackRead,
-    status_code=http_status.HTTP_201_CREATED,
+  "/create",
+  summary="Create a Track table entry containing Genres and Artists",
+  response_model=TrackRead,
+  status_code=http_status.HTTP_201_CREATED,
 )
 def create_track(
-    entry: TrackCreate,
-    track_service: Annotated[TrackService, Depends(get_track_service)],
-    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
-    genre_service: Annotated[GenreService, Depends(get_genre_service)],
+  entry: TrackCreate,
+  track_service: Annotated[TrackService, Depends(get_track_service)],
+  artist_service: Annotated[ArtistService, Depends(get_artist_service)],
+  genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
-    artists = artist_service.create_artist_from_track(entry)
-    genres = genre_service.create_genre_from_track(entry)
-    return track_service.create_track(entry, artists, genres)
+  artists = artist_service.create_artist_from_track(entry)
+  genres = genre_service.create_genre_from_track(entry)
+  return track_service.create_track(entry, artists, genres)
 
 
 @TrackRouter.post(
-    "/create/upload",
-    summary="Create a Track table entry from an uploaded file",
-    response_model=list[TrackRead],
-    status_code=http_status.HTTP_201_CREATED,
+  "/create/upload",
+  summary="Create a Track table entry from an uploaded file",
+  response_model=list[TrackRead],
+  status_code=http_status.HTTP_201_CREATED,
 )
 def create_tracks_from_file(
-    file: UploadFile,
-    file_io_service: Annotated[FileIOService, Depends(get_file_io_service)],
-    track_service: Annotated[TrackService, Depends(get_track_service)],
-    artist_service: Annotated[ArtistService, Depends(get_artist_service)],
-    genre_service: Annotated[GenreService, Depends(get_genre_service)],
+  file: UploadFile,
+  file_io_service: Annotated[FileIOService, Depends(get_file_io_service)],
+  track_service: Annotated[TrackService, Depends(get_track_service)],
+  artist_service: Annotated[ArtistService, Depends(get_artist_service)],
+  genre_service: Annotated[GenreService, Depends(get_genre_service)],
 ):
-    content = file.file.read()
-    track_data = file_io_service.parse(content).get("Tracks").values()
+  content = file.file.read()
+  track_data = file_io_service.parse(content).get("Tracks").values()
 
-    created_tracks = []
+  created_tracks = []
 
-    for obj in track_data:
-        # skip track if validation fails (not enough metadata)
-        try:
-            entry = TrackCreate.model_validate(obj)
-        except ValidationError:
-            continue
+  for obj in track_data:
+    # skip track if validation fails (not enough metadata)
+    try:
+      entry = TrackCreate.model_validate(obj)
+    except ValidationError:
+      continue
 
-        artists = artist_service.create_artist_from_track(entry)
-        genres = genre_service.create_genre_from_track(entry)
+    artists = artist_service.create_artist_from_track(entry)
+    genres = genre_service.create_genre_from_track(entry)
 
-        created_tracks.append(
-            track_service.create_track(entry, artists, genres)
-        )
+    created_tracks.append(track_service.create_track(entry, artists, genres))
 
-    logger.debug(f"Created {len(created_tracks)} of {len(track_data)} tracks")
+  logger.debug(f"Created {len(created_tracks)} of {len(track_data)} tracks")
 
-    return created_tracks
+  return created_tracks
 
 
 # ==============================
@@ -139,28 +133,28 @@ def create_tracks_from_file(
 
 
 @TrackRouter.get(
-    "/read/all",
-    summary="Read *all* Track table entries",
-    response_model=list[TrackRead],
-    status_code=http_status.HTTP_200_OK,
+  "/read/all",
+  summary="Read *all* Track table entries",
+  response_model=list[TrackRead],
+  status_code=http_status.HTTP_200_OK,
 )
 def read_all(
-    track_service: Annotated[TrackService, Depends(get_track_service)],
+  track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
-    return track_service.read_all()
+  return track_service.read_all()
 
 
 @TrackRouter.get(
-    "/read",
-    summary="Read a Track table entry",
-    response_model=TrackRead,
-    status_code=http_status.HTTP_200_OK,
+  "/read",
+  summary="Read a Track table entry",
+  response_model=TrackRead,
+  status_code=http_status.HTTP_200_OK,
 )
 def read_track(
-    entry: TrackBase,
-    track_service: Annotated[TrackService, Depends(get_track_service)],
+  entry: TrackBase,
+  track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
-    return track_service.read_track(entry)
+  return track_service.read_track(entry)
 
 
 # ==============================
@@ -169,16 +163,16 @@ def read_track(
 
 
 @TrackRouter.patch(
-    "/update",
-    summary="Update a Track table entry",
-    response_model=TrackRead,
-    status_code=http_status.HTTP_200_OK,
+  "/update",
+  summary="Update a Track table entry",
+  response_model=TrackRead,
+  status_code=http_status.HTTP_200_OK,
 )
 def update_track(
-    entry: TrackUpdate,
-    track_service: Annotated[TrackService, Depends(get_track_service)],
+  entry: TrackUpdate,
+  track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
-    return track_service.update_track(entry)
+  return track_service.update_track(entry)
 
 
 # ==============================
@@ -187,23 +181,23 @@ def update_track(
 
 
 @TrackRouter.delete(
-    "/delete/all",
-    summary="Delete *all* entries from Track table",
-    status_code=http_status.HTTP_204_NO_CONTENT,
+  "/delete/all",
+  summary="Delete *all* entries from Track table",
+  status_code=http_status.HTTP_204_NO_CONTENT,
 )
 def delete_all(
-    track_service: Annotated[TrackService, Depends(get_track_service)],
+  track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
-    return track_service.delete_all()
+  return track_service.delete_all()
 
 
 @TrackRouter.delete(
-    "/delete",
-    summary="Delete one entry from Track table",
-    status_code=http_status.HTTP_204_NO_CONTENT,
+  "/delete",
+  summary="Delete one entry from Track table",
+  status_code=http_status.HTTP_204_NO_CONTENT,
 )
 def delete_track(
-    entry: TrackDelete,
-    track_service: Annotated[TrackService, Depends(get_track_service)],
+  entry: TrackDelete,
+  track_service: Annotated[TrackService, Depends(get_track_service)],
 ):
-    return track_service.delete_track(entry)
+  return track_service.delete_track(entry)

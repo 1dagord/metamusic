@@ -7,22 +7,22 @@ from src.app.core.types import OptionalValidString, ValidString
 
 
 class GenreBase(BaseModel):
-    id: NonNegativeInt
+  id: NonNegativeInt
 
 
 class GenreCreate(BaseModel):
-    name: ValidString
+  name: ValidString
 
 
 class GenreRead(GenreBase):
-    name: ValidString
-    tracks: Sequence[TrackRead]
+  name: ValidString
+  tracks: Sequence[TrackRead]
 
 
 class GenreUpdate(GenreBase):
-    name: OptionalValidString = None
-    tracks: Sequence[TrackRead] | None = None
+  name: OptionalValidString = None
+  tracks: Sequence[TrackRead] | None = None
 
 
 class GenreDelete(GenreBase):
-    pass
+  pass

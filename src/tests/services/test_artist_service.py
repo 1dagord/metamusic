@@ -9,20 +9,20 @@ client = TestClient(app)
 
 
 def override_get_artist_service() -> ArtistService:
-    db = TestingSessionLocal()
-    return ArtistService(db)
+  db = TestingSessionLocal()
+  return ArtistService(db)
 
 
 app.dependency_overrides[get_artist_service] = override_get_artist_service
 
 
 def test_create_artist() -> None:
-    json = {"name": "Keith Sweat"}
-    response = client.post("/artist/create", json=json)
-    assert response.status_code == 201
+  json = {"name": "Keith Sweat"}
+  response = client.post("/artist/create", json=json)
+  assert response.status_code == 201
 
-    created_artist = response.json()
-    assert created_artist["name"] == "Keith Sweat"
+  created_artist = response.json()
+  assert created_artist["name"] == "Keith Sweat"
 
 
 # TODO: finish writing artist tests

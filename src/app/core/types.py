@@ -12,9 +12,7 @@ DatabaseSession = Annotated[OrmSession, Depends(get_db_session)]
 
 # Validation Types
 
-NonEmptyString = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1)
-]
+NonEmptyString = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 ValidString = NonEmptyString
 ValidInteger = NonNegativeInt
 ValidDateTime = datetime

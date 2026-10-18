@@ -10,18 +10,18 @@ logger = logging.getLogger(Loggers.IO)
 
 
 class FileIOService(FileOperator):
-    def __init__(self):
-        pass
+  def __init__(self):
+    pass
 
-    def parse(self, file: Path | str | bytes) -> dict[str, Any]:
-        if isinstance(file, Path):
-            with open(file=file, mode="rb") as fp:
-                data = plistlib.load(fp)
+  def parse(self, file: Path | str | bytes) -> dict[str, Any]:
+    if isinstance(file, Path):
+      with open(file=file, mode="rb") as fp:
+        data = plistlib.load(fp)
 
-        elif isinstance(file, str):
-            data = plistlib.loads(file, fmt=plistlib.PlistFormat.FMT_XML)
+    elif isinstance(file, str):
+      data = plistlib.loads(file, fmt=plistlib.PlistFormat.FMT_XML)
 
-        else:
-            data = plistlib.loads(file)
+    else:
+      data = plistlib.loads(file)
 
-        return data
+    return data
