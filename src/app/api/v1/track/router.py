@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, UploadFile
@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import sessionmaker
 
 from src.app.api.v1.genre.router import GenreService
+from src.app.api.v1.track.model import TrackModel as Track
 from src.app.api.v1.track.schema import (
   TrackBase,
   TrackCreate,
@@ -21,7 +22,8 @@ from src.app.core.types import DatabaseSession
 from src.app.db.config import engine
 from src.app.services.database.artist import ArtistService
 from src.app.services.database.track import TrackService
-from src.app.services.io.parser import FileIOService
+from src.app.services.io.file.parser import FileIOService
+from src.app.services.io.network.download import AsyncSongDownloader
 
 TrackRouter = APIRouter(tags=["Track"], prefix="/track")
 
@@ -70,6 +72,10 @@ def get_file_io_service() -> FileIOService:
   return FileIOService()
 
 
+def get_song_downloader() -> AsyncSongDownloader:
+  return AsyncSongDownloader(timeout_seconds=30.0)
+
+
 # ==============================
 # CREATE
 # ==============================
@@ -86,7 +92,7 @@ def create_track(
   track_service: Annotated[TrackService, Depends(get_track_service)],
   artist_service: Annotated[ArtistService, Depends(get_artist_service)],
   genre_service: Annotated[GenreService, Depends(get_genre_service)],
-):
+) -> Track:
   artists = artist_service.create_artist_from_track(entry)
   genres = genre_service.create_genre_from_track(entry)
   return track_service.create_track(entry, artists, genres)
@@ -104,7 +110,10 @@ def create_tracks_from_file(
   track_service: Annotated[TrackService, Depends(get_track_service)],
   artist_service: Annotated[ArtistService, Depends(get_artist_service)],
   genre_service: Annotated[GenreService, Depends(get_genre_service)],
-):
+) -> Sequence[Track]:
+  # TODO: move all of these details into a service
+  # maybe rename FileIOService to FileIOClient and create
+  # a service implementing the client
   content = file.file.read()
   track_data = file_io_service.parse(content).get("Tracks").values()
 
@@ -127,6 +136,25 @@ def create_tracks_from_file(
   return created_tracks
 
 
+@TrackRouter.get(
+  "/create/download",
+  summary="Download audio files using Track metadata",
+  status_code=http_status.HTTP_201_CREATED,
+)
+async def download_track(
+  track_service: Annotated[TrackService, Depends(get_track_service)],
+  download_service: Annotated[AsyncSongDownloader, Depends(get_song_downloader)],
+) -> None:
+  # TODO: move all of these details into a service
+  all_tracks = track_service.read_all()
+
+  for track in all_tracks:
+    track_read = TrackRead.model_validate(track)
+    await download_service.queue_download(track_read)
+
+  await download_service.execute_download()
+
+
 # ==============================
 # READ
 # ==============================
@@ -140,7 +168,7 @@ def create_tracks_from_file(
 )
 def read_all(
   track_service: Annotated[TrackService, Depends(get_track_service)],
-):
+) -> Sequence[Track]:
   return track_service.read_all()
 
 
@@ -153,7 +181,7 @@ def read_all(
 def read_track(
   entry: TrackBase,
   track_service: Annotated[TrackService, Depends(get_track_service)],
-):
+) -> Track:
   return track_service.read_track(entry)
 
 

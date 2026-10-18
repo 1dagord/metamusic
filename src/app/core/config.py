@@ -4,7 +4,7 @@ from pathlib import Path
 class Config:
   app_name: str = "MetaMusic"
   db_name: str = "MM"
-  debug: bool = False
+  debug: bool = True
   host: str = "0.0.0.0"
   port: int = 8000
 
@@ -15,6 +15,11 @@ class Config:
   @property
   def sqlite_db_url(self) -> str:
     return f"sqlite:///./{self.db_name}.db"
+
+  @property
+  def download_dir(self) -> Path:
+    # return Path.home() / "Downloads"
+    return Path("/Volumes/FiioSD/Download")
 
 
 config = Config()

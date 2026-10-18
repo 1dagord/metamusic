@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from src.app.core.config import config
 from src.app.main import app
-from src.app.services.io.parser import FileIOService
+from src.app.services.io.file.parser import FileIOService
 
 client = TestClient(app)
 

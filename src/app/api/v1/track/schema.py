@@ -1,9 +1,3 @@
-"""
-schema.py
-
-Contains contracts for interacting with the Track database table
-"""
-
 import re
 from datetime import timedelta
 from enum import StrEnum
@@ -16,10 +10,13 @@ from pydantic import (
   AfterValidator,
   BaseModel,
   BeforeValidator,
+  ConfigDict,
   Field,
   StringConstraints,
 )
 
+from src.app.api.v1.artist.model import ArtistModel
+from src.app.api.v1.genre.model import GenreModel
 from src.app.core.types import (
   OptionalValidInteger,
   OptionalValidString,
@@ -68,9 +65,17 @@ def _validate_artists(string: str) -> set[str]:
   return artists
 
 
+def _validate_artist_names(artists: set[ArtistModel]) -> set[str]:
+  return {a.name for a in artists}
+
+
 def _validate_genres(string: str) -> set[str]:
   genres = set(re.split(r"[,&]", string))
   return genres
+
+
+def _validate_genre_names(genres: set[GenreModel]):
+  return {g.name for g in genres}
 
 
 ValidFile = Annotated[str, BeforeValidator(_validate_file)]
@@ -79,11 +84,14 @@ ValidFileType = Annotated[
   AfterValidator(func=_validate_file_type),
   StringConstraints(min_length=1, max_length=6),
 ]
-ValidInterval = Annotated[timedelta, AfterValidator(_validate_interval)]
+ValidInterval = Annotated[timedelta, BeforeValidator(_validate_interval)]
+ValidHumanReadableInterval = Annotated[str, BeforeValidator(lambda v: str(v))]
 ValidYear = Annotated[ValidInteger, Field(ge=1000, le=9999)]
 ValidSampleRate = Annotated[ValidInteger, Field(ge=44100)]
 ValidArtists = Annotated[set[ValidString], BeforeValidator(_validate_artists)]
+ValidArtistNames = Annotated[set[ValidString], BeforeValidator(_validate_artist_names)]
 ValidGenres = Annotated[set[ValidString], BeforeValidator(_validate_genres)]
+ValidGenreNames = Annotated[set[ValidString], BeforeValidator(_validate_genre_names)]
 
 OptionalValidYear = ValidYear | None
 OptionalValidInterval = ValidInterval | None
@@ -93,32 +101,37 @@ OptionalValidFileType = ValidFileType | None
 
 
 class TrackBase(BaseModel):
-  persistent_id: ValidString
+  model_config = ConfigDict(from_attributes=True, validate_by_name=True)
 
-
-class TrackCreate(BaseModel):
   persistent_id: ValidString = Field(alias="Persistent ID")
+
+
+class TrackCreate(TrackBase):
   name: ValidString = Field(alias="Name")
   size: ValidInteger = Field(alias="Size")
   total_time: ValidInterval = Field(alias=("Total Time"))
   year: ValidYear = Field(alias=("Year"))
-  bpm: OptionalValidInteger = Field(alias=("BPM"), default=None)
-  bit_rate: OptionalValidInteger = Field(alias=("Bit Rate"), default=None)
+  bit_rate: OptionalValidInteger = Field(alias=("Bit Rate"))
   sample_rate: ValidSampleRate = Field(alias=("Sample Rate"))
-  file_type: OptionalValidFile = Field(alias=("Location"), default=None)
   artists: ValidArtists = Field(alias="Artist")
   genres: ValidGenres = Field(default_factory=set)
+  bpm: OptionalValidInteger = Field(alias=("BPM"), default=None)
+  file_type: OptionalValidFile = Field(alias=("Location"), default=None)
+  album: OptionalValidString = Field(alias="Album", default=None)
 
 
 class TrackRead(TrackBase):
   name: ValidString
   size: ValidInteger
-  total_time: ValidInterval
+  total_time: ValidHumanReadableInterval
   year: ValidYear
-  bpm: OptionalValidInteger = None
   bit_rate: ValidInteger
   sample_rate: ValidSampleRate
+  artists: ValidArtistNames
+  genres: ValidGenreNames
+  bpm: OptionalValidInteger = None
   file_type: OptionalValidFileType = None
+  album: OptionalValidString = None
 
 
 class TrackUpdate(TrackBase):
@@ -126,11 +139,12 @@ class TrackUpdate(TrackBase):
   size: OptionalValidInteger = None
   total_time: OptionalValidInterval = None
   year: OptionalValidYear = None
-  bpm: OptionalValidInteger = None
   bit_rate: OptionalValidInteger = None
   sample_rate: OptionalValidSampleRate = None
+  bpm: OptionalValidInteger = None
   file_type: OptionalValidFileType = None
+  album: OptionalValidString = None
 
 
-class TrackDelete(BaseModel):
-  persistent_id: ValidString = Field(alias="Persistent ID")
+class TrackDelete(TrackBase):
+  pass

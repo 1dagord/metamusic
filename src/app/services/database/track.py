@@ -30,7 +30,7 @@ class TrackService(DatabaseOperator):
     entry: TrackCreate,
     artists: Sequence[Artist],
     genres: Sequence[Genre],
-  ):
+  ) -> Track:
     logger.debug("Creating Track entry...")
 
     track = Track(
@@ -43,6 +43,7 @@ class TrackService(DatabaseOperator):
       bit_rate=entry.bit_rate,
       sample_rate=entry.sample_rate,
       file_type=entry.file_type,
+      album=entry.album,
     )
 
     with self._db.begin():
@@ -68,7 +69,7 @@ class TrackService(DatabaseOperator):
     stmt = select(Track).where(Track.persistent_id == entry.persistent_id)
     return self._db.scalars(stmt).one()
 
-  def update_track(self, entry: TrackUpdate):
+  def update_track(self, entry: TrackUpdate) -> Track:
     logger.debug("Updating one track entry...")
 
     with self._db.begin():
